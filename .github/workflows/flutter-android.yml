@@ -14,7 +14,7 @@ jobs:
 
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.19.0' # stabil Flutter version
+          flutter-version: '3.19.6' # stabil Flutter version
 
       - run: flutter pub get
       - run: flutter build apk --release
