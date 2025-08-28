@@ -1,98 +1,59 @@
-name: Repair Android & Build APK
+name: Repair & Build Flutter Android
 
 on:
-  workflow_dispatch: {}
+  workflow_dispatch: {}   # gör att du kan köra den manuellt
 
 permissions:
-  contents: write
+  contents: write         # krävs för att committa tillbaka
 
 jobs:
-  repair_build:
+  repair_and_build:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: Set up Java 17
-        uses: actions/setup-java@v4
         with:
-          distribution: temurin
-          java-version: '17'
+          fetch-depth: 0
 
-      - name: Set up Flutter
+      - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.19.6'
-          channel: stable
+          flutter-version: '3.19.0'   # välj samma som du använt tidigare
 
-      - name: Backup old android (if present) and regenerate
-        run: |
-          set -e
-          if [ -d android ]; then
-            mv android android_old
-          fi
-          flutter create .
-
-      - name: Restore applicationId / namespace from old project (if available)
-        run: |
-          set -e
-          OLD_APPID=""
-          if [ -f android_old/app/build.gradle ]; then
-            OLD_APPID=$(grep -Po '(?<=applicationId ")[^"]+' android_old/app/build.gradle || true)
-          fi
-          if [ -z "$OLD_APPID" ] && [ -f android_old/app/src/main/AndroidManifest.xml ]; then
-            OLD_APPID=$(grep -Po '(?<=package=")[^"]+' android_old/app/src/main/AndroidManifest.xml | head -n1 || true)
-          fi
-          if [ -z "$OLD_APPID" ]; then
-            OLD_APPID="com.example.storage_app"
-          fi
-          echo "Using applicationId: $OLD_APPID"
-
-          # Sätt namespace till samma som applicationId
-          sed -i "s/^ *namespace .*/    namespace \"$OLD_APPID\"/" android/app/build.gradle
-
-          # Se till att applicationId finns i defaultConfig
-          awk -v appid="$OLD_APPID" '
-            BEGIN{inserted=0}
-            {print}
-            /defaultConfig *\{/ && inserted==0 {print "        applicationId \"" appid "\""; inserted=1}
-          ' android/app/build.gradle > android/app/build.gradle.new
-          mv android/app/build.gradle.new android/app/build.gradle
-
-      - name: Copy google-services.json if existed
-        run: |
-          if [ -f android_old/app/google-services.json ]; then
-            cp android_old/app/google-services.json android/app/google-services.json
-          fi
-
-      - name: Flutter pub get
+      - name: Pub get
         run: flutter pub get
 
-      - name: Build release APK
-        run: flutter build apk --release
+      # ★ Viktigt: återskapar modern Android-struktur i ditt nuvarande projekt
+      - name: Regenerate Android platform (flutter create .)
+        run: flutter create --platforms=android .
 
-      - name: Show outputs
-        run: ls -R build/app/outputs || true
+      # (Valfritt) säkerställ nyare Gradle om din mall inte uppdateras
+      - name: Force Gradle 8.x if needed
+        run: |
+          FILE=android/gradle/wrapper/gradle-wrapper.properties
+          if [ -f "$FILE" ]; then
+            sed -i 's/gradle-[0-9]\+\(\.[0-9]\+\)\?-all.zip/gradle-8.2-all.zip/g' "$FILE" || true
+          fi
 
-      - name: Commit regenerated android/ back to repo
+      # Commit:a tillbaka alla förändringar (android/, settings.gradle, wrapper osv.)
+      - name: Commit regenerated Android files
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add android
-          git commit -m "Regenerate android with Flutter create (automated)" || echo "No changes to commit"
+          git add -A
+          git commit -m "chore: flutter create --platforms=android (auto-fix Gradle/Android)" || echo "No changes to commit"
           git push
 
-      - name: Upload APK
+      # Bygg APK
+      - name: Build APK
+        run: flutter build apk --release
+
+      # Ladda upp APK som artefakt
+      - name: Upload APKs
         uses: actions/upload-artifact@v4
         with:
           name: app-release
           path: |
             build/app/outputs/flutter-apk/*.apk
             build/app/outputs/apk/release/*.apk
-
-      - name: Upload android_old backup (optional)
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: android_old-backup
-          path: android_old/**
