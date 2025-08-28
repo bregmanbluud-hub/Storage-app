@@ -1,39 +1,35 @@
+// android/app/build.gradle
+
 plugins {
-    id 'com.android.application'
-    id 'kotlin-android'
-    id 'dev.flutter.flutter-gradle-plugin'
+    id "com.android.application"
+    id "org.jetbrains.kotlin.android"
+    // Lägg till om du har Firebase:
+    // id "com.google.gms.google-services"
 }
 
 android {
-    namespace "com.example.storage_app"
+    namespace "com.example.yourapp"
     compileSdk 34
 
     defaultConfig {
-        applicationId "com.example.storage_app"
+        applicationId "com.example.yourapp"
         minSdk 21
         targetSdk 34
         versionCode 1
         versionName "1.0"
     }
 
-    // Viktigt för AGP 8: bygger med Java 17
-    compileOptions {
-        sourceCompatibility JavaVersion.VERSION_17
-        targetCompatibility JavaVersion.VERSION_17
-    }
-    kotlinOptions {
-        jvmTarget = '17'
-    }
-
     buildTypes {
         release {
+            // Byt till en riktig signingConfig när du ska publicera på Play Store
+            signingConfig signingConfigs.debug
             minifyEnabled false
             shrinkResources false
-            signingConfig signingConfigs.debug
+            proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
         }
     }
 }
 
 dependencies {
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.22"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:1.9.22"
 }
