@@ -1,7 +1,7 @@
 name: Repair & Build Flutter Android
 
 on:
-  workflow_dispatch: {}   # gör att du kan köra den manuellt
+  workflow_dispatch: {}   # du kör den manuellt i Actions
 
 permissions:
   contents: write         # krävs för att committa tillbaka
@@ -19,30 +19,39 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.19.0'   # välj samma som du använt tidigare
+          flutter-version: '3.19.0'   # använd samma som du har lokalt
 
       - name: Pub get
         run: flutter pub get
 
-      # ★ Viktigt: återskapar modern Android-struktur i ditt nuvarande projekt
-      - name: Regenerate Android platform (flutter create .)
-        run: flutter create --platforms=android .
+      # ⚡ Läs projektets namn från pubspec.yaml
+      - name: Extract project name
+        id: project_name
+        run: |
+          NAME=$(grep '^name:' pubspec.yaml | awk '{print $2}')
+          echo "project_name=$NAME" >> $GITHUB_OUTPUT
 
-      # (Valfritt) säkerställ nyare Gradle om din mall inte uppdateras
-      - name: Force Gradle 8.x if needed
+      # ⚡ Återskapa android-mappen med rätt namn
+      - name: Regenerate Android platform
+        run: flutter create --platforms=android .
+        env:
+          FLUTTER_PROJECT_NAME: ${{ steps.project_name.outputs.project_name }}
+
+      # Säkerställ Gradle 8.x om den inte är uppdaterad
+      - name: Force Gradle 8.x
         run: |
           FILE=android/gradle/wrapper/gradle-wrapper.properties
           if [ -f "$FILE" ]; then
             sed -i 's/gradle-[0-9]\+\(\.[0-9]\+\)\?-all.zip/gradle-8.2-all.zip/g' "$FILE" || true
           fi
 
-      # Commit:a tillbaka alla förändringar (android/, settings.gradle, wrapper osv.)
+      # Commit:a tillbaka Android-filerna
       - name: Commit regenerated Android files
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
-          git commit -m "chore: flutter create --platforms=android (auto-fix Gradle/Android)" || echo "No changes to commit"
+          git commit -m "chore: repair android platform (auto)" || echo "No changes to commit"
           git push
 
       # Bygg APK
