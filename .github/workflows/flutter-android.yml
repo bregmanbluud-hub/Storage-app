@@ -1,39 +1,46 @@
-name: Build Flutter Android APK
+name: Flutter Android Build
 
 on:
   push:
-    branches: [ "main" ]   # Bygg när du pushar till main
+    branches:
+      - main
   pull_request:
-    branches: [ "main" ]
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      # Hämta koden från repo
-      - name: Checkout source
-        uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-      # Installera Flutter
-      - name: Install Flutter
+      - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.19.6'   # samma som du har lokalt
+          flutter-version: '3.19.0' # Byt version om du använder en annan
 
-      # Installera dependencies
-      - name: Flutter pub get
+      - name: Install dependencies
         run: flutter pub get
 
-      # Bygg APK (release)
-      - name: Build release APK
+      - name: Build APK
         run: flutter build apk --release
 
-      # Ladda upp APK som artefakt
-      - name: Upload APK
-        uses: actions/upload-artifact@v3
+      - name: Build App Bundle
+        run: flutter build appbundle --release
+
+      - name: Build log
+        run: echo "Build completed" > build_log.txt
+
+      - name: Upload APKs
+        uses: actions/upload-artifact@v4
         with:
-          name: release-apk
+          name: app-release
           path: |
             build/app/outputs/flutter-apk/*.apk
             build/app/outputs/apk/release/*.apk
+
+      - name: Upload AAB
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-bundle
+          path: build/app/outputs/bundle/release/*.aab
