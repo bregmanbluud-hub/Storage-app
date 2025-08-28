@@ -1,53 +1,39 @@
-name: Build Flutter APK
+name: Build Flutter Android APK
 
 on:
   push:
-    branches:
-      - main
+    branches: [ "main" ]   # Bygg när du pushar till main
+  pull_request:
+    branches: [ "main" ]
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      # Hämta koden från repo
+      - name: Checkout source
         uses: actions/checkout@v4
 
-      - name: Set up Java 17 (required by AGP 8)
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '17'
-
-      - name: Set up Flutter
+      # Installera Flutter
+      - name: Install Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.19.6'
+          flutter-version: '3.19.6'   # samma som du har lokalt
 
-      - name: Cache pub dependencies
-        uses: actions/cache@v3
-        with:
-          path: ~/.pub-cache
-          key: ${{ runner.os }}-pub-${{ hashFiles('**/pubspec.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-pub-
-
-      - name: Get dependencies
+      # Installera dependencies
+      - name: Flutter pub get
         run: flutter pub get
 
-      - name: Build APK (verbose)
-        run: |
-          flutter build apk --release --verbose 2>&1 | tee build_log.txt
-          ls -R build/app/outputs >> build_log.txt
+      # Bygg APK (release)
+      - name: Build release APK
+        run: flutter build apk --release
 
-      - name: Upload build log
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-log
-          path: build_log.txt
-
+      # Ladda upp APK som artefakt
       - name: Upload APK
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v3
         with:
-          name: app-release
-          path: build/app/outputs/flutter-apk/app-release.apk
+          name: release-apk
+          path: |
+            build/app/outputs/flutter-apk/*.apk
+            build/app/outputs/apk/release/*.apk
