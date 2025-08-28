@@ -1,10 +1,7 @@
-// android/app/build.gradle
-
 plugins {
     id "com.android.application"
     id "org.jetbrains.kotlin.android"
-    // Lägg till om du har Firebase:
-    // id "com.google.gms.google-services"
+    // id "com.google.gms.google-services" // aktivera om du använder Firebase
 }
 
 android {
@@ -21,15 +18,30 @@ android {
 
     buildTypes {
         release {
-            // Byt till en riktig signingConfig när du ska publicera på Play Store
+            // Byt ut till en riktig signingConfig när du ska publicera på Play Store
             signingConfig signingConfigs.debug
             minifyEnabled false
             shrinkResources false
             proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
         }
     }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    kotlinOptions {
+        jvmTarget = "1.8"
+    }
 }
 
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib:1.9.22"
+    implementation "androidx.core:core-ktx:1.10.1"
+    implementation "androidx.appcompat:appcompat:1.6.1"
+    implementation "com.google.android.material:material:1.9.0"
 }
+
+// Viktigt: kopplar in Flutter-gradle scriptet
+apply from: "$flutterRoot/packages/flutter_tools/gradle/flutter.gradle"
