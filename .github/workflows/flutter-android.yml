@@ -38,6 +38,7 @@ jobs:
       - name: Build APK (verbose)
         run: |
           flutter build apk --release --verbose 2>&1 | tee build_log.txt
+          ls -R build/app/outputs >> build_log.txt
 
       - name: Upload build log
         uses: actions/upload-artifact@v4
@@ -45,10 +46,8 @@ jobs:
           name: build-log
           path: build_log.txt
 
-      - name: Upload APKs
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: app-release
-          path: |
-            build/app/outputs/flutter-apk/*.apk
-            build/app/outputs/apk/release/*.apk
+          path: build/app/outputs/flutter-apk/app-release.apk
