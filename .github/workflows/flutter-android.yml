@@ -45,9 +45,10 @@ jobs:
           name: build-log
           path: build_log.txt
 
-      - name: Upload APK
+      - name: Upload APKs
         uses: actions/upload-artifact@v4
         with:
           name: app-release
           path: |
+            build/app/outputs/flutter-apk/*.apk
             build/app/outputs/apk/release/*.apk
