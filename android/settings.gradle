@@ -1,5 +1,3 @@
-// android/settings.gradle
-
 pluginManagement {
     repositories {
         google()
@@ -16,5 +14,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "your_project_name"
+rootProject.name = "Storage-app" // byt till ditt riktiga app-namn om du vill
 include(":app")
